@@ -1,19 +1,22 @@
-from typing import Dict
+from os import getcwd
 
 from src.bills_of_materials import Bom
 from src.optimizers.manufacturing_optimizer import ManufacturingOptimizer
 from src.preprocessing import (
     read_production_problem_excel_template,
     create_mapping_dictionary_from_two_columns,
-    create_costs,
     unify_columns_into_tuple,
+    create_costs,
 )
 
 
-def test_e2e_production_problem(
-    sheets_names_mapping: Dict[str, str],
-    testing_data_path: str = "./e2e_test/input_data/production_problem.xlsx",
-):
+def run_production_problem(sheets_names_mapping, testing_data_path):
+    """
+    TODO
+    :param sheets_names_mapping:
+    :param testing_data_path:
+    :return:
+    """
     raw_data = read_production_problem_excel_template(
         excel_file_path=testing_data_path,
         sheets_names_mapping=sheets_names_mapping,
@@ -21,8 +24,6 @@ def test_e2e_production_problem(
 
     production_lines = raw_data["production_lines"]
     demand = raw_data["demand"]
-    # convert demand period to time (as demand is satisfied once in a day [at 8AM] the priod refeers to the day)
-    demand["period"] = (demand["period"] - 1) * 24 + 8
 
     materials = (
         raw_data["components_md"].component.unique().tolist()
@@ -93,6 +94,19 @@ def test_e2e_production_problem(
         selling_prices=selling_prices,
     )
 
-    results = optimizer.solve()
 
-    print(results)
+if __name__ == "__main__":
+    sheets_names_mapping = {
+        "bom": "Formulas",
+        "finished_goods_md": "Products",
+        "inventory": "Stock",
+        "components_md": "Materials",
+        "production_lines": "Equipment",
+        "demand": "Demand",
+    }
+
+    testing_data_path = f"{getcwd().removesuffix('src')}/tests/e2e_test/input_data/production_problem.xlsx"
+
+    run_production_problem(
+        sheets_names_mapping=sheets_names_mapping, testing_data_path=testing_data_path
+    )

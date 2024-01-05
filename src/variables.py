@@ -1,9 +1,13 @@
-from pyomo.core import Var, NonNegativeReals
+from pyomo.environ import Var, NonNegativeReals, Binary
 
 
 class InventoryVariable(Var):
     def __init__(self, all_materials_all_time_indexes):
-        super().__init__(all_materials_all_time_indexes, name="inventory_quantity", domain=NonNegativeReals)
+        super().__init__(
+            all_materials_all_time_indexes,
+            name="inventory_quantity",
+            domain=NonNegativeReals,
+        )
         self._id = "inventory_quantity"
 
     def __str__(self):
@@ -19,7 +23,11 @@ class InventoryVariable(Var):
 
 class FilledDemand(Var):
     def __init__(self, all_materials_all_time_indexes):
-        super().__init__(all_materials_all_time_indexes, name="filled_demand", domain=NonNegativeReals)
+        super().__init__(
+            all_materials_all_time_indexes,
+            name="filled_demand",
+            domain=NonNegativeReals,
+        )
         self._id = "filled_demand"
 
     def __str__(self):
@@ -55,11 +63,35 @@ class PurchasedQtyVariable(Var):
 
 class ProductionVariable(Var):
     def __init__(self, material_equipment_formula_time_indexes):
-        super().__init__(material_equipment_formula_time_indexes, name="production", domain=NonNegativeReals)
+        super().__init__(
+            material_equipment_formula_time_indexes,
+            name="production",
+            domain=NonNegativeReals,
+        )
         self._id = "production"
 
     def __str__(self):
         return "ProductionVariable"
+
+    def __eq__(self, other):
+        return self.id == other.id
+
+    @property
+    def id(self):
+        return self._id
+
+
+class EquipmentStatusVariable(Var):
+    def __init__(self, equipment_time_indexes):
+        super().__init__(
+            equipment_time_indexes,
+            name="equipment_status",
+            domain=Binary,
+        )
+        self._id = "equipment_status"
+
+    def __str__(self):
+        return "EquipmentStatusVariable"
 
     def __eq__(self, other):
         return self.id == other.id

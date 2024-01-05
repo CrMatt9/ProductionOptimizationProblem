@@ -58,15 +58,18 @@ def create_mapping_dictionary_from_two_columns(df, column_key, column_value) -> 
     :param column_value:
     :return:
     """
+    series = Series(
+            df[column_value].values,
+            index=df[column_key],
+        )
+    if any(series.index.duplicated()):
+        return series.groupby(level=0).agg(list).to_dict()
+    else:
+        return series.to_dict()
 
-    return Series(
-        df[column_value].values,
-        index=df[column_key],
-    ).to_dict()
 
-
-def unify_columns_into_tuple(column_0: Series, column_1: Series):
-    return tuple(zip(column_0, column_1))
+def unify_columns_into_tuple(*args):
+    return tuple(zip(*args))
 
 
 def create_costs(components_md: DataFrame, production_costs: DataFrame) -> namedtuple:

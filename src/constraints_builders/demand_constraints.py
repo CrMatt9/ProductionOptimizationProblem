@@ -16,19 +16,22 @@ class DemandConstraintsBuilder(BaseConstraint):
         super().__init__(materials, t0, tmax)
         self.demand = demand
 
-    def no_filled_demand_at_t0(self):
+    def demand_is_filled_only_at_concrete_time_in_a_day(self, demand_filling_time: int):
         """
         TODO
+        :param demand_filling_time:
         :return:
         """
 
-        def rule(model, material_t0_index):
-            return model.filled_demand[material_t0_index] == 0
+        def rule(model, material, t):
+            if t % 24 != demand_filling_time:
+                return model.filled_demand[(material, t)] == 0
+            return Constraint.Skip
 
         return Constraint(
-            self.all_materials_t0_index,
+            set(self.all_materials_all_time_indexes),
             rule=rule,
-            name="no_filled_demand_at_t0",
+            name="demand_is_filled_only_at_concrete_time_in_a_day",
         )
 
     def filled_demand_loe_than_demand(
@@ -39,7 +42,8 @@ class DemandConstraintsBuilder(BaseConstraint):
         :return:
         """
 
-        def rule(model, material_t_index):
+        def rule(model, material, t):
+            material_t_index = (material, t)
             if material_t_index in self.demand:
                 return (
                     model.filled_demand[material_t_index]

@@ -18,18 +18,16 @@ class Bom:
         children_to_parent_proportion_column_name="material_to_quantity",
     ):
         self._bom_data = bom_data
-        self._bom_data["formula_parent"] = unify_columns_into_tuple(
-            self._bom_data[formula_column_name], self._bom_data[parent_column_name]
-        )
-        self._bom_data["component_proportion"] = unify_columns_into_tuple(
+        self._bom_data["formula_parent_component"] = unify_columns_into_tuple(
+            self._bom_data[formula_column_name],
+            self._bom_data[parent_column_name],
             self._bom_data[children_column_name],
-            self._bom_data[children_to_parent_proportion_column_name],
         )
 
         self._bom_raw = create_mapping_dictionary_from_two_columns(
             df=self._bom_data,
-            column_key="formula_parent",
-            column_value="component_proportion",
+            column_key="formula_parent_component",
+            column_value=children_to_parent_proportion_column_name,
         )
 
         # TODO check if required
@@ -46,4 +44,19 @@ class Bom:
         TODO
         :return:
         """
-        return self._bom_data.manufactured_good.unique().to_list()
+        return self._bom_data[self.parent_column_name].unique().tolist()
+
+    def get_required_quantity(
+        self,
+        formula: str,
+        parent_material: str,
+        children_material: str,
+    ):
+        """
+        TODO
+        :param formula:
+        :param parent_material:
+        :param children_material:
+        :return:
+        """
+        return self._bom_raw.get((formula, parent_material, children_material), 0)

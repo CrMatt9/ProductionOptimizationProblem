@@ -27,28 +27,41 @@ class FlowConstraintsBuilder(BaseConstraint):
     ):
         def rule(
             model,
-            material_time_index: Tuple[str, int],
+            material: str,
+            t: int,
         ):
-            inventory_quantity_tip1 = model.inventory_quantity[
-                (material_time_index.material, material_time_index.time + 1)
-            ]
+            if t == self.tmax:
+                return Constraint.Skip
+
+            material_time_index = (material, t)
+            inventory_quantity_tip1 = model.inventory_quantity[(material, t + 1)]
 
             inventory_quantity_ti = model.inventory_quantity[material_time_index]
 
-            production_ti = model.production[material_time_index]
-
+            production_ti = sum(
+                model.production[
+                    build_single_material_equipment_formula_time_index(
+                        material=material,
+                        equipment=equipment,
+                        formula=formula,
+                        time=t,
+                    )
+                ]
+                for equipment in self.all_equipment
+                for formula in self.formulas
+            )
             parent_production_ti = sum(
                 self.bom.get_required_quantity(
                     formula=formula,
                     parent_material=parent_material,
-                    children_material=material_time_index.material,
+                    children_material=material,
                 )
                 * model.production[
                     build_single_material_equipment_formula_time_index(
                         material=parent_material,
                         equipment=equipment,
                         formula=formula,
-                        time=material_time_index.time,
+                        time=t,
                     )
                 ]
                 for parent_material in self.bom.all_parent_materials

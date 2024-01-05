@@ -1,5 +1,5 @@
 from abc import ABC
-from os import getenv
+from collections import namedtuple
 from typing import List, Dict, Tuple
 
 from pyomo.core import Objective, maximize
@@ -15,12 +15,14 @@ from src.utils import (
     build_material_time_indexes,
     build_single_material_equipment_formula_time_index,
     build_material_equipment_formula_time_indexes,
+    build_equipment_time_indexes,
 )
 from src.variables import (
     ProductionVariable,
     InventoryVariable,
     FilledDemand,
     PurchasedQtyVariable,
+    EquipmentStatusVariable,
 )
 
 
@@ -35,7 +37,10 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         all_materials_all_time_indexes: List[Tuple[str, int]] = None,
         all_materials_t0_index: List[Tuple[str, int]] = None,
         material_equipment_formula_time_indexes: List[Tuple[str, str, str, int]] = None,
+        equipment_time_indexes: List[Tuple[str, int]] = None,
     ):
+        super().__init__(name="ManufacturingOptimizer")
+
         # Simulation general info
         self.materials = materials
         self.all_equipment = all_equipment
@@ -70,15 +75,25 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
                 all_equipment=self.all_equipment,
                 formulas=self.formulas,
                 t0=self.t0,
-                tmax=self.t0,
+                tmax=self.tmax,
+            )
+        )
+        self.equipment_time_indexes = (
+            equipment_time_indexes
+            if equipment_time_indexes
+            else build_equipment_time_indexes(
+                all_equipment=self.all_equipment,
+                t0=self.t0,
+                tmax=self.tmax,
             )
         )
 
         # Variables
-        self._production = None
-        self._filled_demand = None
-        self._inventory = None
-        self._purchased_qty = None
+        self.production = None
+        self.filled_demand = None
+        self.inventory_quantity = None
+        self.purchased_quantity = None
+        self.equipment_status = None
 
         # Constraints
         self.initial_inventory = None
@@ -86,6 +101,7 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
 
         self.no_production_at_t0 = None
         self.production_doesnt_exceed_capacity = None
+        self.max_continuous_production_time_limit = None
 
         self.no_purchase_qty_at_t0 = None
 
@@ -93,13 +109,6 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         self.filled_demand_loe_than_demand = None
 
         self.material_flow_balance = None
-
-        # Objective Function
-        self.objective = None
-
-        # Optimizer Definition
-        self.solver_path = getenv("SOLVER_PATH")
-        self.solver_name = getenv("SOLVER_NAME")
 
     def build_model(
         self,
@@ -125,10 +134,15 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         self._build_objective_function(costs=costs, selling_prices=selling_prices)
 
     def _create_variables(self):
-        self._production = ProductionVariable(self.material_equipment_formula_time_indexes)
-        self._filled_demand = FilledDemand(self.all_materials_all_time_indexes)
-        self._inventory = InventoryVariable(self.all_materials_all_time_indexes)
-        self._purchased_qty = PurchasedQtyVariable(self.all_materials_all_time_indexes)
+        self.production = ProductionVariable(
+            self.material_equipment_formula_time_indexes
+        )
+        self.filled_demand = FilledDemand(self.all_materials_all_time_indexes)
+        self.inventory_quantity = InventoryVariable(self.all_materials_all_time_indexes)
+        self.purchased_quantity = PurchasedQtyVariable(
+            self.all_materials_all_time_indexes
+        )
+        self.equipment_status = EquipmentStatusVariable(self.equipment_time_indexes)
 
     def _create_inventory_constraints(
         self, initial_inventory: Dict[str, float], safety_stock: Dict[str, float]
@@ -158,6 +172,7 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
     def _create_production_constraints(
         self,
         max_capacity: Dict[Tuple[str, str], int],
+        max_equipment_production_continuous_time: int = 4,
     ):
         """
         TODO
@@ -172,11 +187,19 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
             formulas=self.formulas,
         )
 
-        self.no_production_at_t0 = production_constraints_builder.no_production_at_t0()
+        self.no_production_at_t0 = (
+            production_constraints_builder.no_production_when_factory_is_closed()
+        )
 
         self.production_doesnt_exceed_capacity = (
             production_constraints_builder.production_doesnt_exceed_capacity(
                 max_capacity=max_capacity
+            )
+        )
+
+        self.max_continuous_production_time_limit = (
+            production_constraints_builder.max_continuous_production_time_limit(
+                max_continuous_time=max_equipment_production_continuous_time
             )
         )
 
@@ -200,7 +223,9 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
 
         self.material_flow_balance = flow_constraints_builder.material_flow_balance()
 
-    def _create_demand_constraints(self, demand: Dict[Tuple[str, int], int]):
+    def _create_demand_constraints(
+        self, demand: Dict[Tuple[str, int], int], demand_filling_time: int = 8
+    ):
         """
         TODO
         :param demand:
@@ -214,7 +239,9 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         )
 
         self.no_filled_demand_at_t0 = (
-            demand_constraints_builder.no_filled_demand_at_t0()
+            demand_constraints_builder.demand_is_filled_only_at_concrete_time_in_a_day(
+                demand_filling_time
+            )
         )
         self.filled_demand_loe_than_demand = (
             demand_constraints_builder.filled_demand_loe_than_demand()
@@ -223,6 +250,12 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
     def _build_objective_function(
         self, costs: Tuple[str, Dict[str, float]], selling_prices: Dict[str, float]
     ):
+        """
+        TODO
+        :param costs:
+        :param selling_prices:
+        :return:
+        """
         self.objective = Objective(
             expr=self.get_objective_function_expression(
                 costs=costs, selling_prices=selling_prices
@@ -233,16 +266,22 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
     def get_objective_function_expression(
         self, costs: Tuple[str, Dict[str, float]], selling_prices: Dict[str, float]
     ):
+        """
+        TODO
+        :param costs:
+        :param selling_prices:
+        :return:
+        """
         return sum(
             selling_prices.get(material_time_index.material, 0.0)
-            * self._filled_demand[material_time_index]
-            - costs.stocking.get(material_time_index.material, 0.0)
-            * self._inventory[material_time_index]
-            - costs.purchasing.get(material_time_index.material, 0.0)
-            * self._purchased_qty[material_time_index]
+            * self.filled_demand[material_time_index]
+            - costs.inventory.get(material_time_index.material, 0.0)
+            * self.inventory_quantity[material_time_index]
+            - costs.purchase.get(material_time_index.material, 0.0)
+            * self.purchased_quantity[material_time_index]
             - sum(
                 costs.production.get((equipment, formula), 0.0)
-                * self._production[
+                * self.production[
                     build_single_material_equipment_formula_time_index(
                         material=material_time_index.material,
                         equipment=equipment,
@@ -256,8 +295,65 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
             for material_time_index in self.all_materials_all_time_indexes
         )
 
-    def solve(self):
-        solver = SolverFactory(self.solver_name, executable=self.solver_path)
-        results = solver.solve(self, tee=False)
+    def generate_results(
+        self,
+    ):
+        results_container = namedtuple(
+            "OptimizationResults",
+            "production filled_demand inventory_quantity purchased_quantity equipment_status",
+        )
 
-        self.check_feasibility(results)
+        model_variables = [
+            self.production,
+            self.filled_demand,
+            self.inventory_quantity,
+            self.purchased_quantity,
+            self.equipment_status,
+        ]
+
+        col_headers = {
+            "production": [
+                "material",
+                "equipment",
+                "formula",
+                "time",
+                "quantity",
+            ],
+            "filled_demand": [
+                "material",
+                "time",
+                "quantity",
+            ],
+            "inventory_quantity": [
+                "material",
+                "time",
+                "quantity",
+            ],
+            "purchased_quantity": [
+                "material",
+                "time",
+                "quantity",
+            ],
+            "equipment_status": [
+                "equipment",
+                "time",
+                "status",
+            ],
+        }
+
+        results = {
+            model_variable.id: self.get_variable_results_on_dataframe_format(
+                model_variable, col_headers
+            )
+            for model_variable in model_variables
+        }
+
+        self.results = results_container(
+            production=results["production"],
+            filled_demand=results["filled_demand"],
+            inventory_quantity=results["inventory_quantity"],
+            purchased_quantity=results["purchased_quantity"],
+            equipment_status=results["equipment_status"],
+        )
+
+        return self.results
