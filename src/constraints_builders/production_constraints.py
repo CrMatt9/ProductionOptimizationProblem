@@ -19,10 +19,13 @@ class ProductionConstraintsBuilder(BaseConstraint):
         tmax: int,
         all_equipment: List[str],
         formulas: List[str],
+        minimum_units_in_batch: int,
     ):
         super().__init__(materials, t0, tmax)
         self.all_equipment = all_equipment
         self.formulas = formulas
+        self.minimum_units_in_batch = minimum_units_in_batch
+
         self.material_equipment_formula_time_indexes = (
             build_material_equipment_formula_time_indexes(
                 materials=self.materials,
@@ -100,7 +103,7 @@ class ProductionConstraintsBuilder(BaseConstraint):
                     )
                 ]
                 for material in self.materials
-            ) <= max_capacity.get(
+            ) * self.minimum_units_in_batch <= max_capacity.get(
                 (
                     equipment,
                     formula,

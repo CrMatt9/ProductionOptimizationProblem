@@ -32,6 +32,7 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         materials: List[str],
         all_equipment: List[str],
         formulas: List[str],
+        minimum_units_in_batch: int,
         simulation_duration: int,
         t0: int = 0,
         all_materials_all_time_indexes: List[Tuple[str, int]] = None,
@@ -45,6 +46,7 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         self.materials = materials
         self.all_equipment = all_equipment
         self.formulas = formulas
+        self.minimum_units_in_batch = minimum_units_in_batch
         self.tmax = simulation_duration
         self.t0 = t0
 
@@ -186,7 +188,6 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         component_materials: Set[str],
         max_capacity: Dict[Tuple[str, str], int],
         max_equipment_production_continuous_time: int = 4,
-        minimum_units_in_batch: int = 10,
     ):
         """
         TODO
@@ -201,6 +202,7 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
             tmax=self.tmax,
             all_equipment=self.all_equipment,
             formulas=self.formulas,
+            minimum_units_in_batch = self.minimum_units_in_batch
         )
 
         self.no_production_at_t0 = (
@@ -251,7 +253,9 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
             bom=bom,
         )
 
-        self.material_flow_balance = flow_constraints_builder.material_flow_balance()
+        self.material_flow_balance = flow_constraints_builder.material_flow_balance(
+            minimum_units_in_batch=self.minimum_units_in_batch
+        )
 
     def _create_demand_constraints(
         self, demand: Dict[Tuple[str, int], int], demand_filling_time: int = 8
@@ -335,6 +339,7 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
                 for formula in self.formulas
                 for equipment in self.all_equipment
             )
+            * self.minimum_units_in_batch
             for material_time_index in self.all_materials_all_time_indexes
         )
 
@@ -360,7 +365,7 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
                 "equipment",
                 "formula",
                 "time",
-                "quantity",
+                "batches",
             ],
             "filled_demand": [
                 "material",

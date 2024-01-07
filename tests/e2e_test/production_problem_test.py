@@ -13,6 +13,7 @@ from src.preprocessing import (
 def test_e2e_production_problem(
     sheets_names_mapping: Dict[str, str],
     testing_data_path: str = "./e2e_test/input_data/production_problem.xlsx",
+    minimum_units_in_batch: int = 10,
 ):
     raw_data = read_production_problem_excel_template(
         excel_file_path=testing_data_path,
@@ -30,13 +31,14 @@ def test_e2e_production_problem(
     )
     all_equipment = production_lines.equipment.unique().tolist()
     formulas = raw_data["bom"].formula.unique().tolist()
-    simulation_duration = (demand.period.max()//24 + 1) * 24
+    simulation_duration = (demand.period.max() // 24 + 1) * 24
 
     optimizer = ManufacturingOptimizer(
         materials=materials,
         all_equipment=all_equipment,
         formulas=formulas,
         simulation_duration=simulation_duration,
+        minimum_units_in_batch=minimum_units_in_batch,
     )
 
     initial_inventory = create_mapping_dictionary_from_two_columns(
@@ -95,6 +97,11 @@ def test_e2e_production_problem(
 
     results = optimizer.solve()
 
-    print(results)
     for name, data in results._asdict().items():
+        _qty_column_mapping = {
+            "equipment_status": "status",
+            "production": "batches",
+        }
+
+        data = data.loc[data[_qty_column_mapping.get(name, "quantity")] != 0]
         data.to_csv(f"./e2e_test/output_data/{name}.csv", index=False)

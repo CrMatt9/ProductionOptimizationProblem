@@ -23,7 +23,7 @@ class FlowConstraintsBuilder(BaseConstraint):
         self.bom = bom
 
     def material_flow_balance(
-        self,
+        self, minimum_units_in_batch:int
     ):
         def rule(
             model,
@@ -49,7 +49,7 @@ class FlowConstraintsBuilder(BaseConstraint):
                 ]
                 for equipment in self.all_equipment
                 for formula in self.formulas
-            )
+            ) * minimum_units_in_batch
             parent_production_ti = sum(
                 self.bom.get_required_quantity(
                     formula=formula,
@@ -67,7 +67,7 @@ class FlowConstraintsBuilder(BaseConstraint):
                 for parent_material in self.bom.all_parent_materials
                 for formula in self.formulas
                 for equipment in self.all_equipment
-            )
+            ) * minimum_units_in_batch
 
             filled_demand_ti = model.filled_demand[material_time_index]
 
