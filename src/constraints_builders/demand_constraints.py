@@ -44,12 +44,9 @@ class DemandConstraintsBuilder(BaseConstraint):
 
         def rule(model, material, t):
             material_t_index = (material, t)
-            if material_t_index in self.demand:
-                return (
-                    model.filled_demand[material_t_index]
-                    <= self.demand[material_t_index]
-                )
-            return Constraint.Skip
+            return model.filled_demand[material_t_index] <= self.demand.get(
+                material_t_index, 0
+            )
 
         return Constraint(
             self.all_materials_all_time_indexes,

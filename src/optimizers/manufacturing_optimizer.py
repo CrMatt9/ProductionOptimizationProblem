@@ -1,15 +1,15 @@
 from abc import ABC
 from collections import namedtuple
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Set
 
 from pyomo.core import Objective, maximize
-from pyomo.opt import SolverFactory
 
 from src.bills_of_materials import Bom
 from src.constraints_builders.demand_constraints import DemandConstraintsBuilder
 from src.constraints_builders.flow_constraints import FlowConstraintsBuilder
 from src.constraints_builders.inventory_constraints import InventoryConstraintsBuilder
 from src.constraints_builders.production_constraints import ProductionConstraintsBuilder
+from src.constraints_builders.purchasing_consrtaints import PurchasingConstraintsBuilder
 from src.optimizers.base_optimizer import BaseOptimizer
 from src.utils import (
     build_material_time_indexes,
@@ -110,6 +110,8 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
 
         self.material_flow_balance = None
 
+        self.only_components_can_be_purchased = None
+
     def build_model(
         self,
         initial_inventory: Dict[str, float],
@@ -130,6 +132,10 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         self._create_material_flow_balance_constraints(bom=bom)
 
         self._create_demand_constraints(demand=demand)
+
+        self._create_purchasing_constraints(
+            all_parent_materials=set(bom.all_parent_materials)
+        )
 
         self._build_objective_function(costs=costs, selling_prices=selling_prices)
 
@@ -245,6 +251,19 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         )
         self.filled_demand_loe_than_demand = (
             demand_constraints_builder.filled_demand_loe_than_demand()
+        )
+
+    def _create_purchasing_constraints(self, all_parent_materials: Set[str]):
+        purchasing_constraints_builder = PurchasingConstraintsBuilder(
+            materials=self.materials,
+            t0=self.t0,
+            tmax=self.tmax,
+        )
+
+        self.only_components_can_be_purchased = (
+            purchasing_constraints_builder.only_components_can_be_purchased(
+                all_parent_materials=all_parent_materials
+            )
         )
 
     def _build_objective_function(

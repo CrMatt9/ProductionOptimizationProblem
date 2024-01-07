@@ -96,3 +96,5 @@ def test_e2e_production_problem(
     results = optimizer.solve()
 
     print(results)
+    for name, data in results._asdict().items():
+        data.to_csv(f"./e2e_test/output_data/{name}.csv", index=False)
