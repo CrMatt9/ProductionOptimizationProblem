@@ -30,7 +30,7 @@ def test_e2e_production_problem(
     )
     all_equipment = production_lines.equipment.unique().tolist()
     formulas = raw_data["bom"].formula.unique().tolist()
-    simulation_duration = demand.period.max()
+    simulation_duration = (demand.period.max()//24 + 1) * 24
 
     optimizer = ManufacturingOptimizer(
         materials=materials,
