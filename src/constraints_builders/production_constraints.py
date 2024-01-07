@@ -114,6 +114,67 @@ class ProductionConstraintsBuilder(BaseConstraint):
             name="production_doesnt_exceed_capacity",
         )
 
+    def equipment_status_loe_than_production(
+        self,
+    ):
+        """
+        TODO
+        :return:
+        """
+
+        def rule(model, equipment: str, t: int):
+            production_on_equipment_at_t = sum(
+                model.production[
+                    build_single_material_equipment_formula_time_index(
+                        material=material,
+                        equipment=equipment,
+                        formula=formula,
+                        time=t,
+                    )
+                ]
+                for material in self.materials
+                for formula in self.formulas
+            )
+            return model.equipment_status[equipment, t] <= production_on_equipment_at_t
+
+        return Constraint(
+            self.equipment_time_indexes,
+            rule=rule,
+            name="equipment_status_loe_than_production",
+        )
+
+    def equipment_status_is_active_when_producing(
+        self,
+    ):
+        """
+        TODO
+        :return:
+        """
+
+        def rule(model, equipment: str, t: int):
+            production_on_equipment_at_t = sum(
+                model.production[
+                    build_single_material_equipment_formula_time_index(
+                        material=material,
+                        equipment=equipment,
+                        formula=formula,
+                        time=t,
+                    )
+                ]
+                for material in self.materials
+                for formula in self.formulas
+            )
+            return (
+                production_on_equipment_at_t
+                <= model.equipment_status[equipment, t] * 1e8
+            )
+
+        return Constraint(
+            self.equipment_time_indexes,
+            rule=rule,
+            name="equipment_status_is_active_when_producing",
+        )
+
     def max_continuous_production_time_limit(self, max_continuous_time: int):
         """
         TODO

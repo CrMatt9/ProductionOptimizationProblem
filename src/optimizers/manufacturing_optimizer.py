@@ -102,6 +102,8 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         self.no_production_at_t0 = None
         self.components_cannot_be_produced = None
         self.production_doesnt_exceed_capacity = None
+        self.equipment_status_is_active_when_producing = None
+        self.equipment_status_loe_than_production = None
         self.max_continuous_production_time_limit = None
 
         self.no_purchase_qty_at_t0 = None
@@ -184,6 +186,7 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         component_materials: Set[str],
         max_capacity: Dict[Tuple[str, str], int],
         max_equipment_production_continuous_time: int = 4,
+        minimum_units_in_batch: int = 10,
     ):
         """
         TODO
@@ -214,6 +217,14 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
             production_constraints_builder.production_doesnt_exceed_capacity(
                 max_capacity=max_capacity
             )
+        )
+
+        self.equipment_status_is_active_when_producing = (
+            production_constraints_builder.equipment_status_is_active_when_producing()
+        )
+
+        self.equipment_status_loe_than_production = (
+            production_constraints_builder.equipment_status_loe_than_production()
         )
 
         self.max_continuous_production_time_limit = (

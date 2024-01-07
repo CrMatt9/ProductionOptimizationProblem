@@ -16,5 +16,5 @@ class PurchasingConstraintsBuilder(BaseConstraint):
         return Constraint(
             self.all_materials_all_time_indexes,
             rule=rule,
-            name="initial_inventory_constraint",
+            name="only_components_can_be_purchased",
         )
