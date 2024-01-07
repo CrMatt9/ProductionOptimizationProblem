@@ -116,6 +116,7 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         self.material_flow_balance = None
 
         self.only_components_can_be_purchased = None
+        self.no_purchasing_when_factory_is_closed = None
 
     def build_model(
         self,
@@ -202,7 +203,7 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
             tmax=self.tmax,
             all_equipment=self.all_equipment,
             formulas=self.formulas,
-            minimum_units_in_batch = self.minimum_units_in_batch
+            minimum_units_in_batch=self.minimum_units_in_batch,
         )
 
         self.no_production_at_t0 = (
@@ -292,6 +293,10 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
             purchasing_constraints_builder.only_components_can_be_purchased(
                 all_parent_materials=all_parent_materials
             )
+        )
+
+        self.no_purchasing_when_factory_is_closed = (
+            purchasing_constraints_builder.no_purchasing_when_factory_is_closed()
         )
 
     def _build_objective_function(

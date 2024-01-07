@@ -31,7 +31,9 @@ def test_e2e_production_problem(
     )
     all_equipment = production_lines.equipment.unique().tolist()
     formulas = raw_data["bom"].formula.unique().tolist()
-    simulation_duration = (demand.period.max() // 24 + 1) * 24
+
+    # calculate last working hour from last day on the plan
+    simulation_duration = ((demand.period.max() // 24 + 1) * 24) - 4
 
     optimizer = ManufacturingOptimizer(
         materials=materials,
@@ -97,6 +99,8 @@ def test_e2e_production_problem(
 
     results = optimizer.solve()
 
+    print(f"Optimal revenue from the production plan is: {optimizer.objective()}")
+
     for name, data in results._asdict().items():
         _qty_column_mapping = {
             "equipment_status": "status",
@@ -105,3 +109,5 @@ def test_e2e_production_problem(
 
         data = data.loc[data[_qty_column_mapping.get(name, "quantity")] != 0]
         data.to_csv(f"./e2e_test/output_data/{name}.csv", index=False)
+
+    assert int(optimizer.objective()) == 120125

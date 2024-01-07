@@ -18,3 +18,21 @@ class PurchasingConstraintsBuilder(BaseConstraint):
             rule=rule,
             name="only_components_can_be_purchased",
         )
+
+    def no_purchasing_when_factory_is_closed(self):
+        """
+        TODO
+        :return:
+        """
+
+        def rule(model, material: str, time: int):
+            hour_from_day = time % 24
+            if hour_from_day < 8 or hour_from_day > 20:
+                return model.purchased_quantity[material, time] == 0
+            return Constraint.Skip
+
+        return Constraint(
+            self.all_materials_all_time_indexes,
+            rule=rule,
+            name="no_purchasing_when_factory_is_closed",
+        )
