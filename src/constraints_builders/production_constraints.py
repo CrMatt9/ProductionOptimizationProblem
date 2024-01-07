@@ -51,8 +51,8 @@ class ProductionConstraintsBuilder(BaseConstraint):
 
     def no_production_when_factory_is_closed(self):
         """
-        TODO
-        :return:
+        Constraint which limits production in non-working hours
+        :return: Pyomo Constraint
         """
 
         def rule(model, material: str, equipment: str, formula: str, time: int):
@@ -69,8 +69,9 @@ class ProductionConstraintsBuilder(BaseConstraint):
 
     def components_cannot_be_produced(self, component_materials: Set[str]):
         """
-        TODO
-        :return:
+        Limit materials that are being produced. Externally procured materials will be purchased not produced in house.
+        :param component_materials: Set of materials which are externally procured.
+        :return: Pyomo Constraint
         """
 
         def rule(model, material: str, equipment: str, formula: str, time: int):
@@ -88,8 +89,9 @@ class ProductionConstraintsBuilder(BaseConstraint):
         self, max_capacity: Dict[Tuple[str, str], int]
     ):
         """
-        TODO
-        :return:
+        Constraint which assert that the production doesn't exceed actual capacity
+        :param max_capacity: Dict which maps Equipment and formula combination with its capacity
+        :return: Pyomo Constraint
         """
 
         def rule(model, equipment: str, formula: str, t: int):
@@ -121,8 +123,12 @@ class ProductionConstraintsBuilder(BaseConstraint):
         self,
     ):
         """
-        TODO
-        :return:
+        Auxiliary constraint to set that equipment status is 1 when something is being produced and 0 otherwise.
+        This constraint is split in two:
+         A: production >= equipment_status
+         B: production <= equipment_statu * MAX_VALUE
+        For this function, it represents equation A
+        :return: Pyomo Constraint
         """
 
         def rule(model, equipment: str, t: int):
@@ -150,8 +156,12 @@ class ProductionConstraintsBuilder(BaseConstraint):
         self,
     ):
         """
-        TODO
-        :return:
+        Auxiliary constraint to set that equipment status is 1 when something is being produced and 0 otherwise.
+        This constraint is split in two:
+         A: production >= equipment_status
+         B: production <= equipment_statu * MAX_VALUE
+        For this function, it represents equation B
+        :return: Pyomo Constraint
         """
 
         def rule(model, equipment: str, t: int):
@@ -180,8 +190,9 @@ class ProductionConstraintsBuilder(BaseConstraint):
 
     def max_continuous_production_time_limit(self, max_continuous_time: int):
         """
-        TODO
-        :return:
+        Constraint to assert production from equipment doesn't exceed limit
+        :param max_continuous_time: Periods of time which an equipment could be operating in a row
+        :return: Pyomo Constraint
         """
 
         def rule(model, equipment: str, time: int):

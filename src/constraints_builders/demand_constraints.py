@@ -18,9 +18,9 @@ class DemandConstraintsBuilder(BaseConstraint):
 
     def demand_is_filled_only_at_concrete_time_in_a_day(self, demand_filling_time: int):
         """
-        TODO
-        :param demand_filling_time:
-        :return:
+        Constraint which limits demand filling. It must be done only in a concrete hour in the day.
+        :param demand_filling_time: The hour when the demand is getting out from stock
+        :return: Pyomo Constraint
         """
 
         def rule(model, material, t):
@@ -38,8 +38,9 @@ class DemandConstraintsBuilder(BaseConstraint):
         self,
     ):
         """
-        TODO
-        :return:
+        Constraint which limits the quantity that we sell must be smaller or equal than what
+        it has been purchased by customers
+        :return: Pyomo Constraint
         """
 
         def rule(model, material, t):

@@ -35,8 +35,8 @@ class BaseOptimizer(ConcreteModel):
 
     def solve(self):
         """
-        TODO
-        :return:
+        Resolution of the LP problem with the specified solver
+        :return: Results of the problem
         """
         solver = SolverFactory(self.solver_name, executable=self.solver_path)
         results = solver.solve(self, tee=False)

@@ -163,10 +163,11 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         self, initial_inventory: Dict[str, float], safety_stock: Dict[str, float]
     ):
         """
-        TODO
-        :param initial_inventory:
-        :param safety_stock:
-        :return:
+        Creates all inventory related constraints
+        :param initial_inventory: Dictionary which maps the material with the initial inventory on hand
+        at beginning of the simulation
+        :param safety_stock: Dictionary which maps the material with its safety stock
+        :return: None
         """
         inventory_constraints_builder = InventoryConstraintsBuilder(
             materials=self.materials,
@@ -191,11 +192,11 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         max_equipment_production_continuous_time: int = 4,
     ):
         """
-        TODO
-        :param component_materials:
-        :param max_capacity:
-        :param max_equipment_production_continuous_time:
-        :return:
+        Creates all production related constraints
+        :param component_materials: Set of all materials which are externally procured
+        :param max_capacity: Dict which maps Equipment and formula combination with its capacity
+        :param max_equipment_production_continuous_time: Periods of time which an equipment could be operating in a row
+        :return: None
         """
         production_constraints_builder = ProductionConstraintsBuilder(
             materials=self.materials,
@@ -241,9 +242,9 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         bom: Bom,
     ):
         """
-
-        :param bom:
-        :return:
+        Creates all flow balance related constraints
+        :param bom: Bom object which contains all related bills of materials information
+        :return: None
         """
         flow_constraints_builder = FlowConstraintsBuilder(
             materials=self.materials,
@@ -262,9 +263,9 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         self, demand: Dict[Tuple[str, int], int], demand_filling_time: int = 8
     ):
         """
-        TODO
-        :param demand:
-        :return:
+        Creates all demand related constraints
+        :param demand: The hour when the demand is getting out from stock
+        :return: None
         """
         demand_constraints_builder = DemandConstraintsBuilder(
             materials=self.materials,
@@ -283,6 +284,11 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         )
 
     def _create_purchasing_constraints(self, all_parent_materials: Set[str]):
+        """
+        Creates all purchasing related constraints
+        :param all_parent_materials: Set of all materials which are being produced in-house
+        :return: None
+        """
         purchasing_constraints_builder = PurchasingConstraintsBuilder(
             materials=self.materials,
             t0=self.t0,
@@ -303,10 +309,10 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         self, costs: Tuple[str, Dict[str, float]], selling_prices: Dict[str, float]
     ):
         """
-        TODO
-        :param costs:
-        :param selling_prices:
-        :return:
+        Builds the objective function from this model
+        :param costs: Named tuple with all cost types and a dict which maps the cost to its generator
+        :param selling_prices: Dictionary which maps finished_goods to its selling price
+        :return: None
         """
         self.objective = Objective(
             expr=self.get_objective_function_expression(
@@ -319,10 +325,10 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         self, costs: Tuple[str, Dict[str, float]], selling_prices: Dict[str, float]
     ):
         """
-        TODO
-        :param costs:
-        :param selling_prices:
-        :return:
+        Generated the objective function from this model
+        :param costs: Named tuple with all cost types and a dict which maps the cost to its generator
+        :param selling_prices: Dictionary which maps finished_goods to its selling price
+        :return: Objective function expression
         """
         return sum(
             selling_prices.get(material_time_index.material, 0.0)
@@ -351,6 +357,11 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
     def generate_results(
         self,
     ):
+        """
+        Generates results from the optimization. All its variables status.
+        :return: Namedtuple containing all variables status in DataFrames
+        """
+
         results_container = namedtuple(
             "OptimizationResults",
             "production filled_demand inventory_quantity purchased_quantity equipment_status",

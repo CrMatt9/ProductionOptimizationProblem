@@ -30,7 +30,6 @@ class Bom:
             column_value=children_to_parent_proportion_column_name,
         )
 
-        # TODO check if required
         self.formula_column_name = formula_column_name
         self.parent_column_name = parent_column_name
         self.children_column_name = children_column_name
@@ -41,16 +40,16 @@ class Bom:
     @property
     def all_parent_materials(self) -> List[str]:
         """
-        TODO
-        :return:
+        Gets all materials which are manufactured
+        :return: List of all material IDs
         """
         return self._bom_data[self.parent_column_name].unique().tolist()
 
     @property
     def all_component_materials(self) -> List[str]:
         """
-        TODO
-        :return:
+       Gets all materials which are externally procured
+        :return: List of all material IDs
         """
         return self._bom_data[self.children_column_name].unique().tolist()
 
@@ -59,12 +58,13 @@ class Bom:
         formula: str,
         parent_material: str,
         children_material: str,
-    ):
+    ) -> float :
         """
-        TODO
-        :param formula:
-        :param parent_material:
-        :param children_material:
-        :return:
+        Generate the required quantity from the children material given to manufacture one unit of the parent material
+         specify using the passed formula.
+        :param formula: Formula which is being used to this production
+        :param parent_material: Material ID of the material which is being manufactured
+        :param children_material: Material ID from the material which will be consumed
+        :return: Quantity required from the component, if the component is not in bom the quantity returned is 0
         """
         return self._bom_raw.get((formula, parent_material, children_material), 0)

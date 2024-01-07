@@ -7,6 +7,12 @@ from src.constraints_builders.base_constraint import BaseConstraint
 
 class PurchasingConstraintsBuilder(BaseConstraint):
     def only_components_can_be_purchased(self, all_parent_materials: Set[str]):
+        """
+        Constraint to force only externally procured materials are being purchased externally.
+        The other must be produced
+        :param all_parent_materials: Set of all materials which are being produced in-house
+        :return: Pyomo Constraint
+        """
         def rule(model, material, time):
             if material in all_parent_materials:
                 return model.purchased_quantity[material, time] == 0
@@ -21,8 +27,8 @@ class PurchasingConstraintsBuilder(BaseConstraint):
 
     def no_purchasing_when_factory_is_closed(self):
         """
-        TODO
-        :return:
+        Constraint to assert nothing is purchased when factory is not operating
+        :return: Pyomo Constraint
         """
 
         def rule(model, material: str, time: int):
