@@ -90,27 +90,23 @@ class ProductionConstraintsBuilder(BaseConstraint):
         """
 
         def rule(model, equipment: str, formula: str, t: int):
-            if (equipment, formula) in max_capacity:
-                return (
-                    sum(
-                        model.production[
-                            build_single_material_equipment_formula_time_index(
-                                material=material,
-                                equipment=equipment,
-                                formula=formula,
-                                time=t,
-                            )
-                        ]
-                        for material in self.materials
+            return sum(
+                model.production[
+                    build_single_material_equipment_formula_time_index(
+                        material=material,
+                        equipment=equipment,
+                        formula=formula,
+                        time=t,
                     )
-                    <= max_capacity[
-                        (
-                            equipment,
-                            formula,
-                        )
-                    ]
-                )
-            return Constraint.Skip
+                ]
+                for material in self.materials
+            ) <= max_capacity.get(
+                (
+                    equipment,
+                    formula,
+                ),
+                0,
+            )
 
         return Constraint(
             self.equipment_formula_time_indexes,
