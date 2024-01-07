@@ -100,6 +100,7 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         self.inventory_tmax_goe_than_safety_stock = None
 
         self.no_production_at_t0 = None
+        self.components_cannot_be_produced = None
         self.production_doesnt_exceed_capacity = None
         self.max_continuous_production_time_limit = None
 
@@ -127,7 +128,10 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         self._create_inventory_constraints(
             initial_inventory=initial_inventory, safety_stock=safety_stock
         )
-        self._create_production_constraints(max_capacity=max_capacity)
+        self._create_production_constraints(
+            component_materials=set(bom.all_component_materials),
+            max_capacity=max_capacity,
+        )
 
         self._create_material_flow_balance_constraints(bom=bom)
 
@@ -177,12 +181,15 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
 
     def _create_production_constraints(
         self,
+        component_materials: Set[str],
         max_capacity: Dict[Tuple[str, str], int],
         max_equipment_production_continuous_time: int = 4,
     ):
         """
         TODO
+        :param component_materials:
         :param max_capacity:
+        :param max_equipment_production_continuous_time:
         :return:
         """
         production_constraints_builder = ProductionConstraintsBuilder(
@@ -195,6 +202,12 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
 
         self.no_production_at_t0 = (
             production_constraints_builder.no_production_when_factory_is_closed()
+        )
+
+        self.components_cannot_be_produced = (
+            production_constraints_builder.components_cannot_be_produced(
+                component_materials=component_materials
+            )
         )
 
         self.production_doesnt_exceed_capacity = (

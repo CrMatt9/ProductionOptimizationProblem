@@ -1,4 +1,4 @@
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Set
 
 from pyomo.core import Constraint
 
@@ -64,6 +64,23 @@ class ProductionConstraintsBuilder(BaseConstraint):
             name="no_production_when_factory_is_closed",
         )
 
+    def components_cannot_be_produced(self, component_materials: Set[str]):
+        """
+        TODO
+        :return:
+        """
+
+        def rule(model, material: str, equipment: str, formula: str, time: int):
+            if material in component_materials:
+                return model.production[(material, equipment, formula, time)] == 0
+            return Constraint.Skip
+
+        return Constraint(
+            self.material_equipment_formula_time_indexes,
+            rule=rule,
+            name="no_production_when_factory_is_closed",
+        )
+
     def production_doesnt_exceed_capacity(
         self, max_capacity: Dict[Tuple[str, str], int]
     ):
@@ -108,7 +125,7 @@ class ProductionConstraintsBuilder(BaseConstraint):
         """
 
         def rule(model, equipment: str, time: int):
-            if time < self.tmax-max_continuous_time:
+            if time < self.tmax - max_continuous_time:
                 return (
                     sum(
                         model.equipment_status[equipment, t]

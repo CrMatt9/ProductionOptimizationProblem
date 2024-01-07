@@ -46,6 +46,14 @@ class Bom:
         """
         return self._bom_data[self.parent_column_name].unique().tolist()
 
+    @property
+    def all_component_materials(self) -> List[str]:
+        """
+        TODO
+        :return:
+        """
+        return self._bom_data[self.children_column_name].unique().tolist()
+
     def get_required_quantity(
         self,
         formula: str,
