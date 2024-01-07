@@ -11,7 +11,7 @@ def build_material_time_indexes(
     :param materials: List of materials in scope for the desired index returned
     :param t0: First time period the indexes will contain
     :param tmax: Last time period on scope
-    :return: Tuple with the string of the material and integer indicating time
+    :return: List of Indexes containing all this information in a standardized order and format
     """
     return [
         Index([material, time], material=material, time=time)
@@ -28,14 +28,13 @@ def build_material_equipment_formula_time_indexes(
     tmax: int,
 ) -> List[Index]:
     """
-    TODO NOT USED YET CHECK IT
-    Generates material time combination indexes in a standardized way
-    :param materials: TODO
-    :param all_equipment: TODO
-    :param formulas: TODO
+    Generates all material time equipment and formula combination indexes in a standardized way
+    :param materials: List of all material IDs
+    :param all_equipment: List containing every equipment ID
+    :param formulas: List of all formulas IDs
     :param t0: First time period the indexes will contain
     :param tmax: Last time period on scope
-    :return: Tuple with the string of the material and integer indicating time
+    :return: List of Indexes containing all this information in a standardized order and format
     """
 
     return [
@@ -56,12 +55,12 @@ def build_single_material_equipment_formula_time_index(
     time: int,
 ) -> Index:
     """
-    TODO
-    :param material:
-    :param equipment:
-    :param formula:
-    :param time:
-    :return:
+    Generates one concrete material equipment formula time combination index in a standardized way
+    :param material: material ID
+    :param equipment: equipment ID
+    :param formula: formula ID
+    :param time: int representing the time
+    :return: Index containing all this information in a standardized order and format
     """
     return Index(
         [material, equipment, formula, time],
@@ -79,12 +78,12 @@ def build_equipment_formula_time_indexes(
     tmax: int,
 ) -> List[Index]:
     """
-    TODO
-    :param all_equipment: TODO
-    :param formulas: TODO
+     Generates all equipment formula and time combination indexes in a standardized way
+    :param all_equipment: List containing every equipment ID
+    :param formulas: List of all formulas IDs
     :param t0: First time period the indexes will contain
     :param tmax: Last time period on scope
-    :return: Tuple with the string of the material and integer indicating time
+    :return: List of Indexes containing all this information in a standardized order and format
     """
 
     return [
@@ -106,11 +105,11 @@ def build_equipment_time_indexes(
     tmax: int,
 ) -> List[Index]:
     """
-    TODO
-    :param all_equipment: TODO
+    Generates all equipment and time combination indexes in a standardized way
+    :param all_equipment: List containing every equipment ID
     :param t0: First time period the indexes will contain
     :param tmax: Last time period on scope
-    :return: Tuple with the string of the material and integer indicating time
+    :return: List of Indexes containing all this information in a standardized order and format
     """
 
     return [

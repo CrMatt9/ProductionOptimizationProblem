@@ -128,6 +128,18 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         costs: Tuple[str, Dict[str, float]],
         selling_prices: Dict[str, float],
     ):
+        """
+        Creates the optimization model by instantiating all variables, constraints and objective function.
+        :param initial_inventory: Dictionary which maps the material with the initial inventory on hand
+        at beginning of the simulation
+        :param safety_stock: Dictionary which maps the material with its safety stock
+        :param max_capacity: Dict which maps Equipment and formula combination with its capacity
+        :param demand: Dictionary which maps the finished_good and time to the quantity demanded to factory
+        :param bom: Bom object which contains all related bills of materials information
+        :param costs: Named tuple with all cost types and a dict which maps the cost to its generator
+        :param selling_prices: Dictionary which maps finished_goods to its selling price
+        :return: None
+        """
         self._create_variables()
 
         self._create_inventory_constraints(
@@ -149,6 +161,10 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         self._build_objective_function(costs=costs, selling_prices=selling_prices)
 
     def _create_variables(self):
+        """
+        Creates all variables from model
+        :return: None
+        """
         self.production = ProductionVariable(
             self.material_equipment_formula_time_indexes
         )
@@ -264,7 +280,8 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
     ):
         """
         Creates all demand related constraints
-        :param demand: The hour when the demand is getting out from stock
+        :param demand: Dictionary which maps the finished_good and time to the quantity demanded to factory
+        :param demand_filling_time: The hour when the demand is getting out from stock
         :return: None
         """
         demand_constraints_builder = DemandConstraintsBuilder(
@@ -358,7 +375,7 @@ class ManufacturingOptimizer(BaseOptimizer, ABC):
         self,
     ):
         """
-        Generates results from the optimization. All its variables status.
+        Generates results from the optimization. All its variables' status.
         :return: Namedtuple containing all variables status in DataFrames
         """
 

@@ -10,10 +10,11 @@ def read_production_problem_excel_template(
     excel_file_path: Union[Path, str], sheets_names_mapping: Dict[str, str]
 ) -> Dict[str, DataFrame]:
     """
-    TODO
-    :param sheets_names_mapping:
-    :param excel_file_path:
-    :return:
+    Reads Excel file defined on data model (check doc folder to see it) and cleans it
+    :param sheets_names_mapping: Mapping with the information of the tab names required with the actual names from
+    the Excel provided.
+    :param excel_file_path: Path where the data is read from.
+    :return: Dictionary with table name as key and DataFrame as value
     """
     _required_data = [
         "bom",
@@ -52,16 +53,17 @@ def read_production_problem_excel_template(
 
 def create_mapping_dictionary_from_two_columns(df, column_key, column_value) -> dict:
     """
-    TODO
-    :param df:
-    :param column_key:
-    :param column_value:
-    :return:
+    From two columns of a DataFrame creates a dictionary which maps the values
+    :param df: DataFrame
+    :param column_key: Column data which will be converted to Dictionary keys
+    :param column_value: Column data which will be converted to Dictionary values
+    :return: In case data is 1:1 or *:1 returns a Dict of value:value,
+     if it is 1:* the result will be value:tuple(values)
     """
     series = Series(
-            df[column_value].values,
-            index=df[column_key],
-        )
+        df[column_value].values,
+        index=df[column_key],
+    )
     if any(series.index.duplicated()):
         return series.groupby(level=0).agg(list).to_dict()
     else:
@@ -69,15 +71,20 @@ def create_mapping_dictionary_from_two_columns(df, column_key, column_value) -> 
 
 
 def unify_columns_into_tuple(*args):
+    """
+    Unifies multiple columns in a tuple as (col1_value, col2_value, col3_value,...)
+    :param args: DataFrame columns
+    :return: Series
+    """
     return tuple(zip(*args))
 
 
 def create_costs(components_md: DataFrame, production_costs: DataFrame) -> namedtuple:
     """
-    TODO
-    :param components_md:
-    :param production_costs:
-    :return:
+    Based on given data generates a named tuple with all the costs mappings inside
+    :param components_md: DataFrane with components data
+    :param production_costs: DataFrane with production costs information
+    :return: NamedTuple containing Dictionaries of all mappings
     """
     costs_builder = namedtuple("Costs", "inventory purchase production")
 

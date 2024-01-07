@@ -22,7 +22,7 @@ def test_e2e_production_problem(
 
     production_lines = raw_data["production_lines"]
     demand = raw_data["demand"]
-    # convert demand period to time (as demand is satisfied once in a day [at 8AM] the priod refeers to the day)
+    # convert demand period to time (as demand is satisfied once in a day [at 8AM] the period refers to the day)
     demand["period"] = (demand["period"] - 1) * 24 + 8
 
     materials = (

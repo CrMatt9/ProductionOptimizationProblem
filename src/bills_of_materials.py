@@ -58,7 +58,7 @@ class Bom:
         formula: str,
         parent_material: str,
         children_material: str,
-    ) -> float :
+    ) -> float:
         """
         Generate the required quantity from the children material given to manufacture one unit of the parent material
          specify using the passed formula.
